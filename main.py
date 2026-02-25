@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException, Request
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 app = FastAPI()
@@ -8,7 +9,7 @@ app = FastAPI()
 フィボナッチ行列のn項の値を取得する
 第1項を求める場合、その値は入力値n=1とnと合致するので、その値をそのまま返す。
 第n項(i>=2)については、第2項, 第3項,...第n項と順に求めて
-いけば求まるので、n-1回その計算を繰り返したら求まる(bがその値)
+いけば求まるので、n-1回その計算を繰り返したら求まる(その結果、bにその値が格納される)
 '''
 def fib(n: int):
     if n <= 1:
@@ -32,9 +33,7 @@ async def value_exception_handler(request: Request, exc: HTTPException):
         },
     )
 
-'''
-fibエンドポイント以外にアクセスした場合にもカスタマイズしてレスポンスを返す
-'''
+'''fibエンドポイント以外にアクセスした場合(404エラー)にもカスタマイズしてレスポンスを返す'''
 @app.exception_handler(StarletteHTTPException)
 async def not_found_exception_handler(request: Request, exc: StarletteHTTPException):
     return JSONResponse(
@@ -45,13 +44,24 @@ async def not_found_exception_handler(request: Request, exc: StarletteHTTPExcept
         },
     )
 
+'''fibにアクセスしたがクエリにnが含まれない時もエラーを表示する'''
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    return JSONResponse(
+        status_code=422,
+        content={
+            "status": "422",
+            "message": str(exc)
+        },
+    )
+
 '''他のExceptionについてもカスタマイズしたメッセージを返す'''
 @app.exception_handler(Exception)
 async def general_exception_handler(request: Request, exc: Exception):
     return JSONResponse(
         status_code=500,
         content={
-            "status": "error",
+            "status": "inner error",
             "message": str(exc)
         },
     )
