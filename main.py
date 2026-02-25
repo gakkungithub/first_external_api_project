@@ -68,16 +68,18 @@ async def general_exception_handler(request: Request, exc: Exception):
 
 '''
 fibエンドポイントにアクセスされた時に実行される
-入力した値が正の整数でないならその時点で「不正な値」を意味する
-エラーを出し、その内容をカスタマイズしてレスポンスとしてリクエスト側に返す
+入力した値が正の整数または20578(これを入力すると出力の桁数がpythonの限界である4300桁を超える)以上
+ならその時点で「不正な値」を意味するエラーを出し、その内容をカスタマイズしてレスポンスとしてリクエスト側に返す
 他のエラーについても同じ
 エラーもなく正しい値を取得できたら、resultにその値を充てたstatus=200のjsonレスポンスを返す
 '''
 @app.get("/fib")
 def fibonacci(n: int):
     try:
-        if n < 0 or not isinstance(n, int):
-            raise ValueError("n must be non-negative integer")
+        if n <= 0:
+            raise ValueError("n must be positive integer")
+        elif n >= 20578:
+            raise ValueError("n must be positive integer lower than 20578")
         return {
             "result": fib(n)
         }
